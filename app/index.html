@@ -4,6 +4,35 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Recall</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #111118;
+        --surface: #16162A;
+        --inset: #1E1E3A;
+        --border: #252540;
+        --border-subtle: #1A1A2E;
+        --text: #C4BEFF;
+        --text-secondary: #9B8FCC;
+        --text-muted: #555570;
+        --text-dim: #3A3A5C;
+        --accent: #6C63FF;
+        --accent-light: #A78BFA;
+        --green: #4ADE80;
+        --font-ui: 'Inter', system-ui, sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+      }
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body, #root { width: 720px; height: 520px; overflow: hidden; background: var(--bg); color: var(--text); font: 14px/1.6 var(--font-ui); }
+      input, button { font: inherit; }
+      input:focus { outline: none; }
+      button { background: none; border: none; cursor: pointer; padding: 0; }
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: transparent; }
+      ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    </style>
   </head>
   <body>
     <div id="root"></div>
