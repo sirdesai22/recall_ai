@@ -26,8 +26,7 @@ def status():
 
 @app.post("/search")
 def search_route(req: SearchRequest):
-    results = search(req.query)
-    return {"results": results}
+    return search(req.query)
 
 
 @app.post("/pause")
