@@ -1,0 +1,9 @@
+core/.venv/
+core/__pycache__/
+core/frames/
+core/frames.db
+core/lancedb/
+core/frame*.png
+app/node_modules/
+app/dist/
+.DS_Store
