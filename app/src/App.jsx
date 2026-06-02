@@ -50,6 +50,7 @@ function App() {
   const [showPurge, setShowPurge] = useState(false);
   const [purgeStart, setPurgeStart] = useState("");
   const [purgeEnd, setPurgeEnd] = useState("");
+  const [shifted, setShifted] = useState(false);
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -68,6 +69,7 @@ function App() {
 
   async function doSearch() {
     if (!query.trim()) return;
+    setShifted(true);
     const parts = [query.trim()];
     if (filterStart) parts.push(`after:${filterStart}`);
     if (filterEnd) parts.push(`before:${filterEnd}`);
@@ -137,94 +139,107 @@ function App() {
         </div>
       </div>
 
-      {/* Search bar */}
-      <div style={{ position: "relative", margin: "16px 20px 0" }}>
-        <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", display: "flex", pointerEvents: "none" }}>
-          <FiSearch size={15} color="#6C63FF" />
-        </div>
-        <input
-          ref={inputRef}
-          type="text"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && doSearch()}
-          placeholder="Ask anything about your screen history..."
-          style={{
-            width: "100%", background: "#1C1C2E", border: "1px solid #2E2E4A", borderRadius: 10,
-            padding: "12px 40px 12px 40px", fontSize: 14, color: "#E0DEFF",
-          }}
-          onFocus={e => e.target.style.borderColor = "#6C63FF"}
-          onBlur={e => e.target.style.borderColor = "#2E2E4A"}
-        />
-        {!typing && (
-          <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", ...mono, fontSize: 11, color: "#444", pointerEvents: "none" }}>
-            ↵ enter
-          </span>
-        )}
-      </div>
-
-      {/* Filter bar */}
-      {showFilter && (
-        <div style={{ margin: "12px 20px 0", padding: 12, background: "#16162A", border: "1px solid #252540", borderRadius: 10, display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ ...mono, fontSize: 11, color: "#555570" }}>From</span>
-          <input type="date" value={filterStart} onChange={e => setFilterStart(e.target.value)}
-            style={{ background: "#1C1C2E", border: "1px solid #2E2E4A", borderRadius: 6, padding: "4px 8px", fontSize: 12, color: "#E0DEFF", fontFamily: "'JetBrains Mono', monospace" }} />
-          <span style={{ ...mono, fontSize: 11, color: "#555570" }}>to</span>
-          <input type="date" value={filterEnd} onChange={e => setFilterEnd(e.target.value)}
-            style={{ background: "#1C1C2E", border: "1px solid #2E2E4A", borderRadius: 6, padding: "4px 8px", fontSize: 12, color: "#E0DEFF", fontFamily: "'JetBrains Mono', monospace" }} />
-          <button onClick={() => { setShowFilter(false); setFilterStart(""); setFilterEnd(""); }}
-            style={{ ...mono, fontSize: 11, color: "#555570", marginLeft: "auto", cursor: "pointer", background: "none", border: "none" }}>Clear</button>
-        </div>
-      )}
-
-      {/* Purge bar */}
-      {showPurge && (
-        <div style={{ margin: "12px 20px 0", padding: 12, background: "#16162A", border: "1px solid #252540", borderRadius: 10, display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={{ ...mono, fontSize: 11, color: "#555570" }}>Purge from</span>
-          <input type="date" value={purgeStart} onChange={e => setPurgeStart(e.target.value)}
-            style={{ background: "#1C1C2E", border: "1px solid #2E2E4A", borderRadius: 6, padding: "4px 8px", fontSize: 12, color: "#E0DEFF", fontFamily: "'JetBrains Mono', monospace" }} />
-          <span style={{ ...mono, fontSize: 11, color: "#555570" }}>to</span>
-          <input type="date" value={purgeEnd} onChange={e => setPurgeEnd(e.target.value)}
-            style={{ background: "#1C1C2E", border: "1px solid #2E2E4A", borderRadius: 6, padding: "4px 8px", fontSize: 12, color: "#E0DEFF", fontFamily: "'JetBrains Mono', monospace" }} />
-          <button onClick={doPurge}
-            style={{ ...mono, fontSize: 11, color: "#6C63FF", marginLeft: "auto", cursor: "pointer", background: "none", border: "none" }}>Delete</button>
-          <button onClick={() => setShowPurge(false)}
-            style={{ ...mono, fontSize: 11, color: "#555570", cursor: "pointer", background: "none", border: "none" }}>Cancel</button>
-        </div>
-      )}
-
-      {/* Results */}
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 20px 0" }}>
-        {loading && (
-          <>
-            <div style={{ textAlign: "center", ...mono, fontSize: 12, color: "#6C63FF", marginBottom: 12 }}>
-              Searching {frameCount.toLocaleString() || "..."} moments...
+      {/* Middle: search + results */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", transition: "all 0.4s ease", overflow: "hidden" }}>
+        {/* Search bar wrapper */}
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center",
+          transition: "margin 0.4s ease, padding 0.4s ease",
+          marginTop: shifted ? 16 : "auto",
+          marginBottom: shifted ? 0 : "auto",
+          padding: shifted ? "0 20px" : "0",
+          width: "100%",
+        }}>
+          <div style={{ position: "relative", width: shifted ? "calc(100% - 40px)" : "60%", transition: "width 0.4s ease" }}>
+            <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", display: "flex", pointerEvents: "none" }}>
+              <FiSearch size={15} color="#6C63FF" />
             </div>
-            <GhostCard />
-            <div style={{ height: 10 }} />
-            <GhostCard />
-          </>
-        )}
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && doSearch()}
+              placeholder="Ask anything about your screen history..."
+              style={{
+                width: "100%", background: "#1C1C2E", border: "1px solid #2E2E4A", borderRadius: 10,
+                padding: "12px 40px", fontSize: 14, color: "#E0DEFF",
+              }}
+              onFocus={e => e.target.style.borderColor = "#6C63FF"}
+              onBlur={e => e.target.style.borderColor = "#2E2E4A"}
+            />
+            {!typing && (
+              <span style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", ...mono, fontSize: 11, color: "#444", pointerEvents: "none" }}>
+                ↵ enter
+              </span>
+            )}
+          </div>
+        </div>
 
-        {!loading && searched && !answer && !results.length && (
-          <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            <FiSearch size={32} color="#2E2E4A" />
-            <div style={{ fontSize: 14, color: "#3A3A5C", fontWeight: 500 }}>Nothing found</div>
-            <div style={{ fontSize: 12, color: "#2E2E4A" }}>Try rephrasing or a different time range</div>
+        {/* Filter / Purge bars */}
+        {showFilter && (
+          <div style={{ margin: "12px 20px 0", padding: 12, background: "#16162A", border: "1px solid #252540", borderRadius: 10, display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ ...mono, fontSize: 11, color: "#555570" }}>From</span>
+            <input type="date" value={filterStart} onChange={e => setFilterStart(e.target.value)}
+              style={{ background: "#1C1C2E", border: "1px solid #2E2E4A", borderRadius: 6, padding: "4px 8px", fontSize: 12, color: "#E0DEFF", fontFamily: "'JetBrains Mono', monospace" }} />
+            <span style={{ ...mono, fontSize: 11, color: "#555570" }}>to</span>
+            <input type="date" value={filterEnd} onChange={e => setFilterEnd(e.target.value)}
+              style={{ background: "#1C1C2E", border: "1px solid #2E2E4A", borderRadius: 6, padding: "4px 8px", fontSize: 12, color: "#E0DEFF", fontFamily: "'JetBrains Mono', monospace" }} />
+            <button onClick={() => { setShowFilter(false); setFilterStart(""); setFilterEnd(""); }}
+              style={{ ...mono, fontSize: 11, color: "#555570", marginLeft: "auto", cursor: "pointer", background: "none", border: "none" }}>Clear</button>
+          </div>
+        )}
+        {showPurge && (
+          <div style={{ margin: "12px 20px 0", padding: 12, background: "#16162A", border: "1px solid #252540", borderRadius: 10, display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ ...mono, fontSize: 11, color: "#555570" }}>Purge from</span>
+            <input type="date" value={purgeStart} onChange={e => setPurgeStart(e.target.value)}
+              style={{ background: "#1C1C2E", border: "1px solid #2E2E4A", borderRadius: 6, padding: "4px 8px", fontSize: 12, color: "#E0DEFF", fontFamily: "'JetBrains Mono', monospace" }} />
+            <span style={{ ...mono, fontSize: 11, color: "#555570" }}>to</span>
+            <input type="date" value={purgeEnd} onChange={e => setPurgeEnd(e.target.value)}
+              style={{ background: "#1C1C2E", border: "1px solid #2E2E4A", borderRadius: 6, padding: "4px 8px", fontSize: 12, color: "#E0DEFF", fontFamily: "'JetBrains Mono', monospace" }} />
+            <button onClick={doPurge}
+              style={{ ...mono, fontSize: 11, color: "#6C63FF", marginLeft: "auto", cursor: "pointer", background: "none", border: "none" }}>Delete</button>
+            <button onClick={() => setShowPurge(false)}
+              style={{ ...mono, fontSize: 11, color: "#555570", cursor: "pointer", background: "none", border: "none" }}>Cancel</button>
           </div>
         )}
 
-        {!loading && searched && results.length > 0 && (
-          <div style={{ marginBottom: 8, ...mono, fontSize: 11, color: "#4A4A6A", letterSpacing: "0.06em" }}>
-            {results.length} RESULT(S) FOUND
-          </div>
-        )}
+        {/* Results */}
+        <div style={{
+          flex: 1, overflowY: "auto", padding: shifted ? "16px 20px 0" : "0",
+          transition: "padding 0.4s ease, opacity 0.4s ease",
+          opacity: shifted ? 1 : 0,
+        }}>
+          {loading && (
+            <>
+              <div style={{ textAlign: "center", ...mono, fontSize: 12, color: "#6C63FF", marginBottom: 12 }}>
+                Searching {frameCount.toLocaleString() || "..."} moments...
+              </div>
+              <GhostCard />
+              <div style={{ height: 10 }} />
+              <GhostCard />
+            </>
+          )}
 
-        {!loading && answer && (
-          <div style={{ background: "#16162A", border: "1px solid #252540", borderRadius: 12, padding: 16, marginBottom: 10 }}>
-            <div style={{ fontSize: 14, color: "#C4BEFF", lineHeight: 1.65, marginBottom: 14, whiteSpace: "pre-wrap" }}>{answer}</div>
-          </div>
-        )}
+          {!loading && searched && !answer && !results.length && (
+            <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <FiSearch size={32} color="#2E2E4A" />
+              <div style={{ fontSize: 14, color: "#3A3A5C", fontWeight: 500 }}>Nothing found</div>
+              <div style={{ fontSize: 12, color: "#2E2E4A" }}>Try rephrasing or a different time range</div>
+            </div>
+          )}
+
+          {!loading && searched && results.length > 0 && (
+            <div style={{ marginBottom: 8, ...mono, fontSize: 11, color: "#4A4A6A", letterSpacing: "0.06em" }}>
+              {results.length} RESULT(S) FOUND
+            </div>
+          )}
+
+          {!loading && answer && (
+            <div style={{ background: "#16162A", border: "1px solid #252540", borderRadius: 12, padding: 16, marginBottom: 10 }}>
+              <div style={{ fontSize: 14, color: "#C4BEFF", lineHeight: 1.65, marginBottom: 14, whiteSpace: "pre-wrap" }}>{answer}</div>
+            </div>
+          )}
 
         {!loading && results.map((r, i) => {
           const lines = (r.chunk_text || r.raw_text || "").split("\n").filter(l => l.trim().length > 20);
@@ -248,6 +263,7 @@ function App() {
             </div>
           );
         })}
+      </div>
       </div>
 
       {/* Footer */}
