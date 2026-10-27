@@ -1,9 +1,9 @@
-import threading, time, datetime
+import threading, time, datetime, sqlite3
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from query import search
-from capture import CaptureEngine
+from capture import CaptureEngine, DB_PATH
 from compress import run_compression, purge_range
 
 app = FastAPI()
@@ -19,6 +19,8 @@ engine = CaptureEngine()
 
 class SearchRequest(BaseModel):
     query: str
+    start_date: str | None = None
+    end_date: str | None = None
 
 
 class PurgeRequest(BaseModel):
@@ -50,7 +52,13 @@ def status():
 
 @app.post("/search")
 def search_route(req: SearchRequest):
-    return search(req.query)
+    start_ts = end_ts = None
+    if req.start_date and req.end_date:
+        start_ts = datetime.datetime.fromisoformat(req.start_date).timestamp()
+        # end date is inclusive: advance to end of that day
+        end_dt = datetime.datetime.fromisoformat(req.end_date)
+        end_ts = (end_dt + datetime.timedelta(days=1)).timestamp()
+    return search(req.query, start_ts=start_ts, end_ts=end_ts)
 
 
 @app.post("/pause")
@@ -63,9 +71,22 @@ def pause():
         return {"paused": True}
 
 
+def frame_count():
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        n = conn.execute("SELECT COUNT(*) FROM frames").fetchone()[0]
+        conn.close()
+        return n
+    except Exception:
+        return 0
+
+
 @app.get("/capture-status")
 def capture_status():
-    return {"paused": engine.paused}
+    sr = engine.sensitive_reason
+    if sr:
+        return {"paused": True, "paused_reason": sr, "frame_count": frame_count()}
+    return {"paused": engine.paused, "frame_count": frame_count()}
 
 
 @app.post("/purge")
@@ -81,4 +102,4 @@ if __name__ == "__main__":
     engine.start()
     t = threading.Thread(target=compression_loop, daemon=True)
     t.start()
-    uvicorn.run(app, host="0.0.0.0", port=8765)
+    uvicorn.run(app, host="127.0.0.1", port=8765)

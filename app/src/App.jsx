@@ -42,6 +42,7 @@ function App() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [paused, setPaused] = useState(false);
+  const [pausedReason, setPausedReason] = useState("");
   const [frameCount, setFrameCount] = useState(0);
   const [searched, setSearched] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
@@ -56,11 +57,13 @@ function App() {
   useEffect(() => {
     fetch("http://localhost:8765/capture-status").then(r => r.json()).then(d => {
       setPaused(d.paused);
+      setPausedReason(d.paused_reason || "");
       if (d.frame_count !== undefined) setFrameCount(d.frame_count);
     }).catch(() => {});
     const id = setInterval(() => {
       fetch("http://localhost:8765/capture-status").then(r => r.json()).then(d => {
         setPaused(d.paused);
+        setPausedReason(d.paused_reason || "");
         if (d.frame_count !== undefined) setFrameCount(d.frame_count);
       }).catch(() => {});
     }, 30000);
@@ -70,14 +73,15 @@ function App() {
   async function doSearch() {
     if (!query.trim()) return;
     setShifted(true);
-    const parts = [query.trim()];
-    if (filterStart) parts.push(`after:${filterStart}`);
-    if (filterEnd) parts.push(`before:${filterEnd}`);
     setLoading(true); setAnswer(""); setResults([]); setSearched(true);
     try {
       const res = await fetch("http://localhost:8765/search", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query.trim() }),
+        body: JSON.stringify({
+          query: query.trim(),
+          start_date: filterStart || null,
+          end_date: filterEnd || null,
+        }),
       });
       const data = await res.json();
       setAnswer(data.answer || "");
@@ -133,8 +137,11 @@ function App() {
             {paused ? "Resume" : "Pause"}
           </button>
           <span style={{ display: "flex", alignItems: "center", gap: 5, ...mono, fontSize: 11, color: "#555570" }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: paused ? "#555570" : "#4ADE80", display: "inline-block" }} />
-            {frameCount.toLocaleString()} moments
+            <span style={{
+              width: 6, height: 6, borderRadius: "50%", display: "inline-block",
+              background: pausedReason ? "#E8FF47" : paused ? "#555570" : "#4ADE80",
+            }} />
+            {pausedReason ? "Paused — " + pausedReason.replace(/^sensitive /, "") : frameCount.toLocaleString() + " moments"}
           </span>
         </div>
       </div>

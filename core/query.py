@@ -11,8 +11,10 @@ def embed_text(text):
     return response["embeddings"][0]
 
 
-def search(query, top_k=5):
+def search(query, top_k=5, start_ts=None, end_ts=None):
     time_range = parse_time_range(query)
+    if time_range is None and start_ts is not None and end_ts is not None:
+        time_range = (start_ts, end_ts)
     clean_query = strip_time_expression(query)
 
     db = lancedb.connect(LANCEDB_PATH)
@@ -23,7 +25,7 @@ def search(query, top_k=5):
     if time_range:
         start, end = time_range
         search_builder = search_builder.where(
-            f"timestamp >= {start} AND timestamp <= {end}"
+            f"timestamp >= {start} AND timestamp <= {end}", prefilter=True
         )
     results = search_builder.to_list()
 
@@ -32,7 +34,10 @@ def search(query, top_k=5):
         fid = r["frame_id"]
         if fid not in seen:
             seen[fid] = r
-    results = list(seen.values())[:top_k]
+    results = [
+        {k: v for k, v in r.items() if k != "vector"}
+        for r in list(seen.values())[:top_k]
+    ]
 
     answer = generate_answer(query, results, time_range) if results else "No relevant results found."
 

@@ -1,0 +1,8 @@
+mss==10.2.0
+pillow==12.2.0
+imagehash==4.3.2
+pytesseract==0.3.13
+ollama==0.6.2
+lancedb==0.30.2
+fastapi==0.136.1
+uvicorn==0.47.0
